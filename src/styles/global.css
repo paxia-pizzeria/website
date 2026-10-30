@@ -1,0 +1,477 @@
+@import 'tailwindcss';
+@import '@fontsource/poppins/400.css';
+@import '@fontsource/poppins/600.css';
+@import '@fontsource/poppins/700.css';
+
+/*
+  Tema PAXIA: blu e rosso di marca, bianco a dare luce.
+
+  Nessun colore vive qui dentro: arrivano tutti dai token del tema come
+  `var(--tris-*)`, e la guardia in tests/themes impedisce di cablarne uno.
+
+  Il font di marca è Arboria, che non è gratuito: Poppins è un sostituto
+  geometrico vicino, da rimpiazzare con la licenza vera prima della pubblicazione.
+*/
+
+:root {
+  color-scheme: dark;
+  --font-brand: 'Poppins', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --ink-soft: color-mix(in oklab, var(--tris-text) 62%, transparent);
+  /*
+    Inclinazione della sola griglia. Il segno positivo porta la cima delle verticali
+    a sinistra della base, com'è nel disegno originale. I designer l'avevano tracciata
+    a circa 11 gradi; qui resta molto più contenuta perché le caselle cliccabili
+    restano dritte, e oltre una certa inclinazione i segni finirebbero a ridosso
+    delle linee.
+  */
+  --tris-grid-skew: 2.5deg;
+  --ink-faint: color-mix(in oklab, var(--tris-text) 18%, transparent);
+}
+
+/*
+  Il colore del tema resta sotto la fotografia: la copre per intero, ma finché non
+  è scaricata — o se non arriva affatto — la pagina è già del blu giusto.
+
+  `--sfondo` la passa la pagina insieme ai token del tema. `fixed` tiene la foto
+  immobile mentre il contenuto si muove, ma su iOS costa caro e sfarfalla: lì
+  l'ancoraggio torna al comportamento normale, e con una sola schermata non si
+  nota.
+*/
+body {
+  margin: 0;
+  min-height: 100dvh;
+  font-family: var(--font-brand);
+  color: var(--tris-text);
+  background-color: var(--tris-page-background);
+  background-image: var(--sfondo);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+@supports (-webkit-touch-callout: none) {
+  body {
+    background-attachment: scroll;
+  }
+}
+
+/* --- landing ------------------------------------------------------------ */
+
+/*
+  Tre colonne attorno alla tavola: la data a sinistra, l'invito a destra, il tris
+  al centro a prendersi tutto lo spazio che resta. Sotto la soglia del telefono
+  diventano una pila sola, nello stesso ordine in cui stanno nel documento.
+*/
+.landing {
+  position: relative;
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: clamp(1.5rem, 5vw, 4rem);
+  padding: clamp(1.5rem, 5vw, 3rem);
+  padding-inline: max(clamp(1.5rem, 5vw, 3rem), env(safe-area-inset-left));
+}
+
+/*
+  La fotografia è scura ma non uniforme: dove schiarisce, il rosso di marca dei
+  segni ci si perde. Un velo del colore del tema la riporta sotto controllo senza
+  introdurre un colore nuovo.
+*/
+.landing::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: color-mix(in oklab, var(--tris-page-background) 30%, transparent);
+  pointer-events: none;
+}
+
+.landing > * {
+  position: relative;
+}
+
+.landing__date {
+  justify-self: end;
+  font-size: clamp(0.8125rem, 1.6vw, 1rem);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--tris-player-mark);
+}
+
+.landing__cue {
+  justify-self: start;
+  margin: 0;
+  font-size: clamp(0.8125rem, 1.6vw, 1rem);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+@media (max-width: 52rem) {
+  .landing {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: clamp(1.5rem, 6vw, 2.5rem);
+  }
+
+  .landing__date,
+  .landing__cue {
+    justify-self: center;
+    max-width: none;
+    text-align: center;
+  }
+}
+
+/* --- tavola ------------------------------------------------------------- */
+
+.board {
+  position: relative;
+  container-type: size;
+  width: 100%;
+  max-width: var(--tavola-larghezza, 23rem);
+  margin-inline: auto;
+  aspect-ratio: 1;
+  background: var(--tris-board-background);
+}
+
+/*
+  Sulla landing la tavola si allarga e perde il fondo: la fotografia deve
+  passarle attraverso. La larghezza sta sul guscio, non sulla tavola, perché la
+  stessa misura allinea anche lo stato e l'esito che le stanno sotto.
+*/
+.landing .shell {
+  --tavola-larghezza: min(34rem, 52vmin);
+  /*
+    La colonna centrale è `auto`: senza una larghezza dichiarata il guscio si
+    stringe sul contenuto e la tavola, che è larga il 100% di lui, collassa.
+  */
+  width: var(--tavola-larghezza);
+}
+
+.landing .board {
+  background: transparent;
+}
+
+/*
+  Il piede esce dal flusso e si appende sotto la tavola: così l'altezza del
+  guscio è quella della sola tavola, e il centro della pagina — dove stanno la
+  data e l'invito — coincide con il centro del tris anche a partita finita.
+*/
+.landing .game {
+  position: relative;
+}
+
+.landing .game__foot {
+  position: absolute;
+  top: 100%;
+  inset-inline: 0;
+  margin-top: clamp(1.5rem, 4vh, 2.5rem);
+}
+
+/*
+  Le correzioni per la pila stanno qui, dopo le regole della tavola: a pari
+  specificità vince l'ultima, e messe più in alto non avrebbero avuto effetto.
+*/
+@media (max-width: 52rem) {
+  /* In colonna la tavola prende quasi tutta la larghezza: è il bersaglio del dito. */
+  .landing .shell {
+    --tavola-larghezza: min(26rem, 82vw);
+  }
+
+  /*
+    Qui il piede torna nel flusso: in pila non c'è un centro verticale da
+    difendere, e appeso fuori lascerebbe un vuoto prima dell'invito.
+  */
+  .landing .game__foot {
+    position: static;
+  }
+}
+
+.board__grid,
+.board__win {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/*
+  Lo skew tocca soltanto la griglia: i segni restano dritti.
+  Il manuale vieta di alterare inclinazioni e proporzioni del pittogramma SLICE,
+  che fa parte del sistema del logo — e nel disegno originale sono storte le linee,
+  non i segni.
+*/
+.board__grid {
+  color: var(--tris-grid-line);
+  transform: skewX(var(--tris-grid-skew));
+}
+
+.board__win {
+  color: var(--tris-win-line);
+}
+
+.board__cells {
+  position: absolute;
+  inset: 0;
+  display: grid;
+}
+
+.board__row {
+  display: grid;
+}
+
+.board__gridcell {
+  display: grid;
+}
+
+.cell {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  transition: opacity 240ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cell[aria-disabled='true'] {
+  cursor: default;
+}
+
+/*
+  Le caselle fuori dalla terna arretrano, ma di poco.
+  Il rosso di marca sul blu parte già da 2,82:1: smorzarlo al 32% lo porta a 1,1:1
+  e i segni spariscono del tutto, come se la partita si fosse cancellata. A 0,7
+  restano leggibili e a marcare la terna ci pensa la linea bianca.
+*/
+.cell--dimmed {
+  opacity: 0.7;
+}
+
+.cell:focus-visible {
+  outline: 3px solid var(--tris-text);
+  outline-offset: -8px;
+}
+
+.mark {
+  width: 23cqw;
+  height: auto;
+  overflow: visible;
+}
+
+.mark--player {
+  color: var(--tris-player-mark);
+}
+
+.mark--ai {
+  color: var(--tris-ai-mark);
+}
+
+/* --- stato ed esito ----------------------------------------------------- */
+
+/*
+  La cronaca della partita non si vede più: in pagina restano solo il verdetto e
+  il bottone. Resta però letta, perché è la live region che annuncia ogni mossa a
+  chi naviga con uno screen reader — toglierla dal documento lascerebbe la
+  partita muta. Niente `display: none`, che la nasconderebbe anche a loro.
+*/
+.status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.outcome {
+  max-width: var(--tavola-larghezza, 23rem);
+  margin: 0 auto;
+  text-align: center;
+}
+
+.outcome__verdict {
+  margin: 0 0 1rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+/*
+  Il bottone è l'inverso della pagina: inchiostro come fondo, fondo come
+  inchiostro. Il bianco su rosso di marca si ferma a 4,33:1, sotto la soglia di
+  4,5:1 per il testo normale; così arriva a 11:1 — ed è l'uso che il manuale fa
+  del bianco, «crea leggibilità e luminosità». La regola vale per ogni tema.
+*/
+.button {
+  font: inherit;
+  font-weight: 600;
+  padding: 0.7rem 1.5rem;
+  color: var(--tris-page-background);
+  background: var(--tris-text);
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.button:hover {
+  background: color-mix(in oklab, var(--tris-text) 86%, var(--tris-player-mark));
+}
+
+.button:focus-visible {
+  outline: 3px solid var(--tris-text);
+  outline-offset: 3px;
+}
+
+/* --- pannello di anteprima --------------------------------------------- */
+
+.demo {
+  max-width: 23rem;
+  margin: 3.5rem auto 0;
+  padding: 1.25rem;
+  border: 1px solid var(--ink-faint);
+}
+
+.demo__title {
+  margin: 0 0 1rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.demo__field {
+  margin-bottom: 1.25rem;
+}
+
+.demo__field:last-child {
+  margin-bottom: 0;
+}
+
+.demo__field label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.demo__value {
+  font-weight: 400;
+  color: var(--ink-soft);
+}
+
+.demo__field input[type='range'] {
+  width: 100%;
+  accent-color: var(--tris-player-mark);
+}
+
+.demo__field input[type='number'],
+.demo__field select {
+  font: inherit;
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  color: var(--tris-text);
+  background: transparent;
+  border: 1px solid var(--ink-faint);
+  border-radius: 2px;
+}
+
+.demo__hint {
+  margin: 0.4rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+
+/* --- movimento ---------------------------------------------------------- */
+
+/*
+  Un solo momento animato: il segno che si disegna.
+
+  I vettori del brand sono riempimenti, non tracciati, quindi non hanno un percorso
+  da far scorrere. Scorre invece la maschera: la linea mediana che il tema fornisce
+  scopre l'arte vera mano a mano, e il segno si disegna come se fosse tracciato.
+  `pathLength="100"` normalizza ogni tracciato, così la stessa regola vale per
+  qualunque forma di qualunque tema.
+*/
+
+/* Conta l'opacità, non la luminosità: così il tratto può usare `currentColor`
+   e nessun colore finisce cablato nel componente. */
+.mark__mask {
+  mask-type: alpha;
+}
+
+.mark__stroke {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: tris-tratto 380ms ease-out forwards;
+}
+
+@keyframes tris-tratto {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* A disegno finito la maschera si apre del tutto: se una mediana non coprisse
+   perfettamente l'inchiostro, il segno resterebbe mutilato per sempre. */
+.mark__settle {
+  opacity: 0;
+  animation: tris-posa 1ms 560ms forwards;
+}
+
+@keyframes tris-posa {
+  to {
+    opacity: 1;
+  }
+}
+
+/* La griglia è fatta di tratti veri: si disegna da sola, senza maschere.
+   Le proprietà del tratteggio si ereditano, quindi arrivano dentro `<use>`. */
+.board__grid {
+  stroke-dasharray: 100;
+  animation: tris-griglia 560ms ease-out both;
+}
+
+@keyframes tris-griglia {
+  from {
+    stroke-dashoffset: 100;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.board__win line {
+  stroke-dasharray: 100;
+  animation: tris-linea 320ms 140ms ease-out both;
+}
+
+@keyframes tris-linea {
+  from {
+    stroke-dashoffset: 100;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mark__stroke,
+  .board__grid,
+  .board__win line {
+    animation: none;
+  }
+  .mark__settle {
+    opacity: 1;
+    animation: none;
+  }
+  .board__grid,
+  .board__win line {
+    stroke-dashoffset: 0;
+  }
+}

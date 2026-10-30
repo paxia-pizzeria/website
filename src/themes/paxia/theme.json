@@ -1,0 +1,48 @@
+{
+  "slug": "paxia",
+  "name": "PAXIA",
+  "tokens": {
+    "pageBackground": "#003b48",
+    "boardBackground": "#003b48",
+    "gridLine": "#e72e39",
+    "playerMark": "#e72e39",
+    "aiMark": "#ffffff",
+    "winLine": "#ffffff",
+    "text": "#ffffff"
+  },
+  "grid": {
+    "symbol": "grid-paxia",
+    "columns": [
+      0.3333,
+      0.6667
+    ],
+    "rows": [
+      0.3333,
+      0.6667
+    ]
+  },
+  "marks": {
+    "player": {
+      "symbol": "mark-x",
+      "label": "X",
+      "draw": {
+        "paths": [
+          "M97,9 L208,256",
+          "M208,9 L97,256"
+        ],
+        "width": 78
+      }
+    },
+    "ai": {
+      "symbol": "mark-slice",
+      "label": "spicchio",
+      "draw": {
+        "paths": [
+          "M16.9,132.75 A136,117 0 0 1 288.9,132.75 A136,117 0 0 1 16.9,132.75",
+          "M94.5,143 Q148,210 201.3,143"
+        ],
+        "width": 54
+      }
+    }
+  }
+}

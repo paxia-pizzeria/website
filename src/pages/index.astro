@@ -1,0 +1,82 @@
+---
+import GameShell from '@/components/game/GameShell';
+import { DEFAULT_CONFIG } from '@/config/game';
+import { SITE_CONFIG } from '@/config/site';
+import { DEFAULT_THEME, getTheme, themes } from '@/themes';
+import { themeStyle } from '@/themes/style';
+import '@/styles/global.css';
+
+/**
+ * Gli sprite di tutti i temi vengono inlineati una volta sola: `<use href="#id">`
+ * risolve soltanto dentro lo stesso documento.
+ */
+const sprites = Object.values(themes)
+  .map((theme) => theme.sprite)
+  .join('\n');
+
+/** I manifest arrivano all'isola come dati: lo sprite resta nel documento. */
+const manifests = Object.fromEntries(
+  Object.entries(themes).map(([slug, theme]) => [slug, theme.manifest]),
+);
+
+/**
+ * I token del tema predefinito finiscono su `:root` a build time, così il fondo
+ * della pagina è giusto già al primo fotogramma, prima che l'isola si idrati.
+ */
+const rootTokens = Object.entries(themeStyle(getTheme(DEFAULT_THEME).manifest))
+  .map(([name, value]) => `${name}: ${value};`)
+  .join(' ');
+
+/**
+ * La fotografia di sfondo, servita da `public/`.
+ *
+ * Il prefisso arriva da `BASE_URL`, cioè dallo stesso `base` con cui Astro scrive
+ * i percorsi dei propri script: sotto una GitHub Pages di progetto il sito non
+ * vive alla radice del dominio.
+ *
+ * Relativo non si può: `--sfondo` è dichiarato qui ma consumato dal foglio di
+ * stile bundlato, e un `url()` dentro una variabile CSS si risolve rispetto al
+ * foglio che la usa — la foto finirebbe cercata dentro `_astro/`.
+ */
+const SFONDO = `${import.meta.env.BASE_URL}sfondo-paxia.jpg`;
+---
+
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Tris PAXIA — anteprima</title>
+    <meta name="robots" content="noindex" />
+    <!--
+      Lo sfondo è il primo pixel che si vede: senza precarico il browser lo scopre
+      solo dopo aver letto il CSS, e la pagina resta blu per un istante di troppo.
+    -->
+    <link rel="preload" as="image" href={SFONDO} />
+    <!--
+      Accanto ai token del tema viaggia la fotografia: il foglio di stile la cerca
+      come `var(--sfondo)` e così il percorso del file resta scritto una volta sola,
+      qui, dove sta anche il precarico.
+    -->
+    <style set:html={`:root { ${rootTokens} --sfondo: url('${SFONDO}'); }`}></style>
+  </head>
+
+  <body>
+    <div hidden set:html={sprites} />
+
+    <main class="landing">
+      <time class="landing__date" datetime={SITE_CONFIG.eventDateISO}>
+        {SITE_CONFIG.eventDate}
+      </time>
+
+      <GameShell
+        client:load
+        themes={manifests}
+        defaultTheme={DEFAULT_THEME}
+        defaultDifficulty={DEFAULT_CONFIG.difficulty}
+      />
+
+      <p class="landing__cue">{SITE_CONFIG.cue}</p>
+    </main>
+  </body>
+</html>
