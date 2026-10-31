@@ -40,6 +40,11 @@ jobs:
       - name: Configurazione Pages
         id: pages
         uses: actions/configure-pages@v5
+        with:
+          # Se il repo non ha ancora un sito Pages, l'azione lo crea invece di
+          # fermarsi: così la pubblicazione non dipende da un passaggio a mano
+          # nelle impostazioni, che è esattamente dove si era inceppata.
+          enablement: true
 
       - name: Build
         run: npm run build
