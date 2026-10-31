@@ -1,0 +1,61 @@
+name: Pubblicazione su GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  # Permette di ripubblicare a mano, senza aspettare un commit.
+  workflow_dispatch:
+
+# Il token serve per caricare il sito; l'id-token per farsi riconoscere
+# dall'ambiente Pages al momento del deploy.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Una pubblicazione per volta. Se arrivano due push ravvicinati vince
+# l'ultimo, ma quello in corso non viene interrotto a metà.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Dipendenze
+        run: npm ci
+
+      # Questo passo risponde a una domanda che il codice non può sapere:
+      # sotto quale percorso vivrà il sito. Su una Pages di progetto è il nome
+      # del repo, su un dominio proprio è la radice. L'output `base_path`
+      # arriva da GitHub e finisce nella build senza toccare la configurazione.
+      - name: Configurazione Pages
+        id: pages
+        uses: actions/configure-pages@v5
+
+      - name: Build
+        run: npm run build
+        env:
+          BASE_PATH: ${{ steps.pages.outputs.base_path }}
+
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
